@@ -42,6 +42,44 @@ function isCollision(molecule1::Molecule, molecule2::Molecule)
     dist <= molecule1.rayon + molecule2.rayon
 end
 
+#Bounding box-----------------------------------------------------------------------------------------
+
+struct Domain
+    x:: Float64
+    y:: Float64
+    z:: Float64
+end
+
+function domainVolume(domain::Domain)
+    domain.x * domain.y * domain.z
+end
+
+function reflect1D(position::Float64,domain::Float64)
+    if position > 0
+        domain - position
+    else
+        -domain - position 
+    end    
+end            
+
+function specularReflection(molecule::Molecule, domain::Domain)
+    position = molecule.position
+    speed = molecule.speed
+    if abs(position[1]) > domain.x/2
+        speed = (-speed[1],speed[2],speed[3])
+        position = (reflect1D(position[1],domain.x),position[2],position[3])
+    end
+    if abs(position[2]) > domain.y/2
+        speed = (speed[1],-speed[2],speed[3])
+        position = (position[1],reflect1D(position[2],domain.y),position[3])
+    end
+    if abs(position[3]) > domain.z/2
+        speed = (speed[1],speed[2],-speed[3])
+        position = (position[1],position[2],reflect1D(position[3],domain.z))    
+    end
+    molecule.speed = speed
+    molecule.position = position
+end
 
 #step function, does all that is needed to be done in a step--------------------------------------------------------------------
 
@@ -81,44 +119,7 @@ function cineticEnergy(molecules::Vector{Molecule})
     cin_e
 end
 
-#Bounding box-----------------------------------------------------------------------------------------
 
-struct Domain
-    x:: Float64
-    y:: Float64
-    z:: Float64
-end
-
-function domainVolume(domain::Domain)
-    domain.x * domain.y * domain.z
-end
-
-function reflect1D(position::Float64,domain::Float64)
-    if position > 0
-        domain - position
-    else
-        -domain - position 
-    end    
-end            
-
-function specularReflection(molecule::Molecule, domain::Domain)
-    position = molecule.position
-    speed = molecule.speed
-    if abs(position[1]) > domain.x/2
-        speed = (-speed[1],speed[2],speed[3])
-        position = (reflect1D(position[1],domain.x),position[2],position[3])
-    end
-    if abs(position[2]) > domain.y/2
-        speed = (speed[1],-speed[2],speed[3])
-        position = (position[1],reflect1D(position[2],domain.y),position[3])
-    end
-    if abs(position[3]) > domain.z/2
-        speed = (speed[1],speed[2],-speed[3])
-        position = (position[1],position[2],reflect1D(position[3],domain.z))    
-    end
-    molecule.speed = speed
-    molecule.position = position
-end
 
 
 
