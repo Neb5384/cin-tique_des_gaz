@@ -42,7 +42,10 @@ function isCollision(molecule1::Molecule, molecule2::Molecule)
     dist <= molecule1.rayon + molecule2.rayon
 end
 
-function step(molecules::Vector{Molecule};delta_t::Float64)
+
+#step function, does all that is needed to be done in a step--------------------------------------------------------------------
+
+function step(molecules::Vector{Molecule};delta_t::Float64, domain::Domain)
     for (i, molecule) in enumerate(molecules)
         for other_molecule in molecules[i+1:end]
             if isCollision(molecule, other_molecule) computeCollisionSpeed(molecule, other_molecule);break end
@@ -50,6 +53,7 @@ function step(molecules::Vector{Molecule};delta_t::Float64)
     end
     for molecule in molecules
         computeNextPosition(molecule, delta_t = delta_t)
+        specularReflection(molecule,domain)
     end
 end
 
@@ -89,9 +93,31 @@ function domainVolume(domain::Domain)
     domain.x * domain.y * domain.z
 end
 
-function specularReflection(molecule::Molecule)
-    for dimension in 1:3
+function reflect1D(position::Float64,domain::Float64)
+    if position > 0
+        domain - position
+    else
+        -domain - position 
+    end    
+end            
+
+function specularReflection(molecule::Molecule, domain::Domain)
+    position = molecule.position
+    speed = molecule.speed
+    if abs(position[1]) > domain.x/2
+        speed = (-speed[1],speed[2],speed[3])
+        position = (reflect1D(position[1],domain.x),position[2],position[3])
     end
+    if abs(position[2]) > domain.y/2
+        speed = (speed[1],-speed[2],speed[3])
+        position = (position[1],reflect1D(position[2],domain.y),position[3])
+    end
+    if abs(position[3]) > domain.z/2
+        speed = (speed[1],speed[2],-speed[3])
+        position = (position[1],position[2],reflect1D(position[3],domain.z))    
+    end
+    molecule.speed = speed
+    molecule.position = position
 end
 
 

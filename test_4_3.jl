@@ -34,30 +34,47 @@ molecule8.position = (-1e-7,10e-7,0)
 molecule8.speed = (300,0,500)
 
 molecule9 = copy(He)
-molecule8.position = (-2e-7,10e-7,0)
-molecule8.speed = (0,500,0)
+molecule9.position = (-2e-7,10e-7,0)
+molecule9.speed = (0,500,0)
 
-molecules::Vector = [molecule1,molecule2,molecule3,molecule4,molecule5,molecule6,molecule7,molecule8]
+molecules::Vector = [molecule1,molecule2,molecule3,molecule4,molecule5,molecule6,molecule7,molecule8,molecule9]
 
-delta_t = 1e-12
-t_final = 1e-9
+domain = Domain(2e-6,2e-6,2e-6)
+
+delta_t = 1e-13
+t_final = 20e-9
 n_steps = round(Int, t_final / delta_t)
+
+
+
+function get_color(name, seed=0)
+    va = 0.1
+    nva = 1- va
+    RGBf(
+        nva * (hash(name * "r") % 256 / 255) + va * (hash(seed + 17) % 256 / 255),
+        nva * (hash(name * "g") % 256 / 255) + va * (hash(seed + 42) % 256 / 255),
+        nva * (hash(name * "b") % 256 / 255) + va * (hash(seed + 5) % 256 / 255)
+    )
+end
+
+molecule_colors = [get_color(m.formule_chimique, i) for (i, m) in enumerate(molecules)]
 
 
 fig = Figure()
 ax = Axis3(fig[1,1],limits=(-1e-6,1e-6,-1e-6,1e-6,-1e-6,1e-6))
 
 positions = Observable([Point3f(m.position[1], m.position[2], m.position[3]) for m in molecules])
-scatterplot = scatter!(ax, positions, markersize=20)
+colors = Observable(molecule_colors)
+scatterplot = scatter!(ax, positions,color=colors,markersize=20)
 
-animation_time = 2 #secondes d'animation
+animation_time = 6 #secondes d'animation
 decouple = round(Int, n_steps/animation_time/60)
 
 
 #simulation loop which copies states that will be shown imn animation later
 states_history = [deepcopy(molecules)]
 for i in 1:n_steps
-    step(molecules, delta_t = delta_t)
+    step(molecules, delta_t = delta_t,domain = domain)
     if i % decouple == 0
         push!(states_history, deepcopy(molecules))
     end
@@ -89,7 +106,7 @@ while running[]
     for state in states_history
         running[] || break
         positions[] = [Point3f(m.position[1], m.position[2],m.position[3]) for m in state]
-            sleep(1/60)  # 60 fps
+        sleep(1/60)  # 60 fps
     end
 end
 close(screen)
