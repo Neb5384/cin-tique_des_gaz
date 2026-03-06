@@ -33,7 +33,9 @@ molecule8 = copy(O2)
 molecule8.position = (-1e-7,10e-7,0)
 molecule8.speed = (300,0,500)
 
-
+molecule9 = copy(He)
+molecule8.position = (-2e-7,10e-7,0)
+molecule8.speed = (0,500,0)
 
 molecules::Vector = [molecule1,molecule2,molecule3,molecule4,molecule5,molecule6,molecule7,molecule8]
 
@@ -65,7 +67,7 @@ end
 first_momentum = momentum(states_history[1])
 last_momentum = momentum(states_history[end])
 
-println("difference quantite de mouvment : ", (last_momentum -first_momentum) / first_momentum, " %" )
+println("difference quantite de mouvment : (", (last_momentum[1] -first_momentum[1]) / first_momentum[1],",",(last_momentum[2] -first_momentum[2]) / first_momentum[2],",",(last_momentum[3] -first_momentum[3]) / first_momentum[3],") %"  )
 
 first_cinetic_energy = cineticEnergy(states_history[1])
 last_cinetic_energy = cineticEnergy(states_history[end])

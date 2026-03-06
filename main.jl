@@ -1,8 +1,8 @@
 #AAAAAARGHH AAAARGH AAAAAAGH
 
-#rayon de Van der Waals correspond à la moitié de la distance minimale entre les noyaux de deux atomes non liés, lorsqu'ils s'approchent au plus près sans former de liaison chimique
 using LinearAlgebra
 
+#structure de molecule ---------------------------------------------------------------------------------
 Base.@kwdef mutable struct Molecule
     formule_chimique::String
     masse::Float64
@@ -21,6 +21,8 @@ function copy(molecule::Molecule)
     )
 end
 
+#simulation computations---------------------------------------------------------------------------------------
+
 function computeNextPosition(molecule::Molecule; acceleration::NTuple{3,Float64} = (0.0,0.0,0.0), delta_t::Float64)
     molecule.speed = molecule.speed .+ acceleration .* delta_t
     molecule.position = molecule.position .+ molecule.speed .* delta_t
@@ -30,8 +32,8 @@ function computeCollisionSpeed(molecule1::Molecule, molecule2::Molecule)
     r1,v1,m1 = molecule1.position, molecule1.speed, molecule1.masse
     r2,v2,m2 = molecule2.position, molecule2.speed, molecule2.masse
 
-    molecule1.speed = v1 .- 2*m1/(m1+m2) *  dot((v1.-v2),(r1.-r2)) / dot((r1.-r2),(r1.-r2)) .* (r1.-r2)
-    molecule2.speed = v2 .+ 2*m2/(m1+m2) *  dot((v1.-v2),(r1.-r2)) / dot((r1.-r2),(r1.-r2)) .* (r1.-r2)
+    molecule1.speed = v1 .- 2*m2/(m1+m2) *  dot((v1.-v2),(r1.-r2)) / dot((r1.-r2),(r1.-r2)) .* (r1.-r2)
+    molecule2.speed = v2 .+ 2*m1/(m1+m2) *  dot((v1.-v2),(r1.-r2)) / dot((r1.-r2),(r1.-r2)) .* (r1.-r2)
 end
 
 function isCollision(molecule1::Molecule, molecule2::Molecule)
@@ -51,13 +53,15 @@ function step(molecules::Vector{Molecule};delta_t::Float64)
     end
 end
 
+#energy and movement quantity computations-------------------------------------------------------------------------
+
 function momentum(molecule::Molecule)
-    molecule.masse * norm(molecule.speed) 
+    molecule.masse .* molecule.speed 
 end
 function momentum(molecules::Vector{Molecule})
-    mom = 0
+    mom = (0.0,0.0,0.0)
     for molecule in molecules
-        mom += momentum(molecule)
+        mom = mom.+ momentum(molecule)
     end
     mom
 end
@@ -73,6 +77,27 @@ function cineticEnergy(molecules::Vector{Molecule})
     cin_e
 end
 
+#Bounding box-----------------------------------------------------------------------------------------
+
+struct Domain
+    x:: Float64
+    y:: Float64
+    z:: Float64
+end
+
+function domainVolume(domain::Domain)
+    domain.x * domain.y * domain.z
+end
+
+function specularReflection(molecule::Molecule)
+    for dimension in 1:3
+    end
+end
+
+
+
+#some Base molecules--------------------------------------------
+#rayon de Van der Waals correspond à la moitié de la distance minimale entre les noyaux de deux atomes non liés, lorsqu'ils s'approchent au plus près sans former de liaison chimique
 
 He = Molecule(
     formule_chimique = "He",
