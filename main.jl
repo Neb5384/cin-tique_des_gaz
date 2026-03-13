@@ -95,7 +95,7 @@ function step(molecules::Vector{Molecule};delta_t::Float64, domain::Domain)
     end
 end
 
-#energy and movement quantity computations-------------------------------------------------------------------------
+#energy, movement quantity, speed magnitude, temperature, pression computations-------------------------------------------------------------------------
 
 function momentum(molecule::Molecule)
     molecule.masse .* molecule.speed 
@@ -112,12 +112,28 @@ function cineticEnergy(molecule::Molecule)
     0.5 * molecule.masse * dot(molecule.speed,molecule.speed) 
 end
 function cineticEnergy(molecules::Vector{Molecule})
-    cin_e = 0
+    cin_e = 0.0
     for molecule in molecules
         cin_e += cineticEnergy(molecule)
     end
     cin_e
 end
+
+function speedMagnitude(molecule::Molecule)
+    norm(molecule.speed)
+end
+function speedMagnitude(molecules::Vector{Molecule})
+    sum(speedMagnitude(m) for m in molecules) / length(molecules)
+end        
+
+function temperature(molecules::Vector{Molecule})
+    c_boltzmann = 1.380649e-23
+    sum(m.masse * dot(m.speed,m.speed) for m in molecules)/length(molecules)  / (3 * c_boltzmann)
+end
+
+function pression(molecules::Vector{Molecule},domain::Domain)
+    sum(m.masse * dot(m.speed,m.speed) for m in molecules) / (3 * domainVolume(domain))
+end    
 
 
 
@@ -128,8 +144,8 @@ end
 
 He = Molecule(
     formule_chimique = "He",
-    masse    = 6.647e-27,
-    rayon    = 1.40e-10,
+    masse    = 6.646e-27,
+    rayon    = 1.10e-10,            #hard sphere model radius 
     position = (0.0, 0.0, 0.0),
     speed    = (0.0, 0.0, 0.0)
 )
