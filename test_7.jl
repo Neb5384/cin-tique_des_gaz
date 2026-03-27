@@ -4,14 +4,14 @@ using GLMakie
 
 #base variables-----------------------------
 delta_t = 1e-14
-t_final = 20e-11
+t_final = 5e-11
 n_steps = round(Int, t_final / delta_t)
 
 domain = Domain(10e-9,10e-9,10e-9)
 
-animation_time = 5 #secondes d'animation
+animation_time = 15 #secondes d'animation
 
-n_molecules = 1000. 
+n_molecules = 500
 
 initial_atom_speed = 1400
 

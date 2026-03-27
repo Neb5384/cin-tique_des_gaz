@@ -22,8 +22,9 @@ function copy(molecule::Molecule)
 end
 
 #simulation computations---------------------------------------------------------------------------------------
+g = -9.81e13
 
-function computeNextPosition(molecule::Molecule; acceleration::NTuple{3,Float64} = (0.0,0.0,0.0), delta_t::Float64)
+function computeNextPosition(molecule::Molecule; acceleration::NTuple{3,Float64} = (0.0,0.0,g), delta_t::Float64)
     molecule.speed = molecule.speed .+ acceleration .* delta_t
     molecule.position = molecule.position .+ molecule.speed .* delta_t
 end
@@ -124,7 +125,7 @@ function speedMagnitude(molecule::Molecule)
 end
 function speedMagnitude(molecules::Vector{Molecule})
     sum(speedMagnitude(m) for m in molecules) / length(molecules)
-end        
+end  
 
 function temperature(molecules::Vector{Molecule})
     c_boltzmann = 1.380649e-23
