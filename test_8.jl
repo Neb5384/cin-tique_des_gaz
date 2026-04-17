@@ -13,7 +13,7 @@ animation_time = 15  # seconds of animation
 n_molecules = 500
 initial_atom_speed = 1367
 
-n_bins = 40 #number of bins for the histograms
+n_bins = 64 #number of bins for the histograms
 
 #molecules initialisation------------------------------------
 molecules = Vector{Molecule}(undef, n_molecules)
@@ -54,26 +54,31 @@ z_bin_edges = range(-domain.z/2, domain.z/2, length = n_bins + 1)
 z_bin_centers = [(z_bin_edges[i] + z_bin_edges[i+1]) / 2 for i in 1:n_bins]
 z_bin_width   = domain.z / n_bins
 
-function pressure_profile(molecules)    
-    # group molecules
+bin_levels = Int[n_bins]
+let n = n_bins
+    while n > 4
+        n ÷= 2
+        push!(bin_levels, n)
+    end
+end
+
+function pressure_profile(molecules)
     bins = [Molecule[] for _ in 1:n_bins]
     for mol in molecules
         z = mol.position[3]
-        b = Int(floor((z+domain.z/2) / z_bin_width)) + 1
+        b = clamp(Int(floor((z + domain.z/2) / z_bin_width)) + 1, 1, n_bins)
         push!(bins[b], mol)
     end
 
-    # get pressure for each bin
-    pres = zeros(Float64, n_bins)
+    pressures = zeros(Float64, n_bins)
+
     for i in 1:n_bins
         if !isempty(bins[i])
-            local_domain = Domain(domain.x, domain.y, z_bin_width)
-            pres[i] = pression(bins[i], local_domain)
-        else
-            pres[i] = 0.0
+            pressures[i] = pression(bins[i], Domain(domain.x, domain.y, z_bin_width))
         end
     end
-    return pres
+
+    return pressures
 end
 
 #figure layout------------------------------------------------------
@@ -124,8 +129,8 @@ hist!(ax_hist, obs_z,
 
 barplot!(ax_pres,
     z_bin_centers,
-    obs_pres,      
-    direction = :x,        
+    obs_pres,
+    direction = :x,
     width     = z_bin_width,
 )
 
