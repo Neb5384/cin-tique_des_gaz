@@ -54,13 +54,6 @@ z_bin_edges = range(-domain.z/2, domain.z/2, length = n_bins + 1)
 z_bin_centers = [(z_bin_edges[i] + z_bin_edges[i+1]) / 2 for i in 1:n_bins]
 z_bin_width   = domain.z / n_bins
 
-bin_levels = Int[n_bins]
-let n = n_bins
-    while n > 4
-        n ÷= 2
-        push!(bin_levels, n)
-    end
-end
 
 function pressure_profile(molecules)
     bins = [Molecule[] for _ in 1:n_bins]

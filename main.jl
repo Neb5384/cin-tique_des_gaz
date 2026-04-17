@@ -171,4 +171,12 @@ O2 = Molecule(
     position = (0.0, 0.0, 0.0),
     speed    = (0.0, 0.0, 0.0)
 )
+Ar = Molecule(
+    formule_chimique = "Ar",
+    masse    = 6.634e-26,
+    rayon    = 1.88e-10,
+    position = (0.0, 0.0, 0.0),
+    speed    = (0.0, 0.0, 0.0)
+)
+
 
