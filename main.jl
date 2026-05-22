@@ -22,7 +22,8 @@ function copy(molecule::Molecule)
 end
 
 #simulation computations---------------------------------------------------------------------------------------
-g = -9.81e13
+#g = -9.81e13
+g = 0.0
 
 function computeNextPosition(molecule::Molecule; acceleration::NTuple{3,Float64} = (0.0,0.0,g), delta_t::Float64)
     molecule.speed = molecule.speed .+ acceleration .* delta_t
@@ -137,7 +138,65 @@ function pression(molecules::Vector{Molecule},domain::Domain)
 end    
 
 
+#entropy computations---------------------------------------------------------------------------------------
 
+function slice_volume(molecules::Vector{Molecule}, domain::Domain, num_slices::Int, dimension::Int)
+    sliced_molecules = [Molecule[] for _ in 1:num_slices]
+    domain_size = getfield(domain, dimension)
+
+    for mol in molecules
+        position = mol.position[dimension]
+        bin = floor(Int, (position / domain_size + 0.5) * num_slices) + 1
+        bin = clamp(bin, 1, num_slices)
+        push!(sliced_molecules[bin], mol)
+    end
+    return sliced_molecules
+end
+
+function slice_sq_speed(molecules::Vector{Molecule}, num_slices::Int, max_sq_speed::Int)
+    sliced_molecules = [Molecule[] for _ in 1:num_slices]
+
+    for mol in molecules
+        bin = floor(Int, norm(mol.speed)^2 / max_sq_speed * num_slices) + 1
+        bin = clamp(bin, 1, num_slices)
+        push!(sliced_molecules[bin], mol)
+    end    
+    return sliced_molecules
+end    
+
+function entropy_on_slices(sliced_molecules::Vector{Vector{Molecule}}, tot_mol::Int)
+    entropy = 0
+    for slice in sliced_molecules
+        proba = length(slice) / tot_mol
+        if proba != 0
+            entropy -= proba * log2(proba)
+        end    
+    end    
+    return entropy
+end
+
+
+function position_entropy(molecules::Vector{Molecule}, domain::Domain, num_slices::NTuple{3, Int})
+    tot_mol = length(molecules)
+    x_sliced = slice_volume(molecules,domain,num_slices[1],1)
+    y_sliced = slice_volume(molecules,domain,num_slices[2],2)
+    z_sliced = slice_volume(molecules,domain,num_slices[3],3)
+
+    entropy = entropy_on_slices(x_sliced, tot_mol) + entropy_on_slices(y_sliced, tot_mol) + entropy_on_slices(z_sliced, tot_mol)
+    return entropy
+end    
+
+function speed_entropy(molecules::Vector{Molecule}, num_slices::Int, max_sq_speed::Int)
+    tot_mol = length(molecules)
+    v_sliced = slice_sq_speed(molecules,num_slices,max_sq_speed)
+
+    entropy = entropy_on_slices(v_sliced, tot_mol)
+    return entropy
+end    
+
+function entropy(molecules::Vector{Molecule}, domain::Domain, pos_slices::NTuple{3, Int}, sq_speed_slices::Int)
+    return position_entropy(molecules,domain,pos_slices) + speed_entropy(molecules,sq_speed_slices,200000)
+end    
 
 
 #some Base molecules--------------------------------------------

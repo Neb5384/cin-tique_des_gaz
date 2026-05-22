@@ -4,10 +4,10 @@ using GLMakie
 
 #base variables-----------------------------
 delta_t = 1e-14
-t_final = 5e-11
+t_final = 10e-11
 n_steps = round(Int, t_final / delta_t)
 
-domain = Domain(2e-8, 2e-8, 2e-8)
+domain = Domain(4e-8, 4e-8, 8e-8)
 
 animation_time = 15  # seconds of animation
 
