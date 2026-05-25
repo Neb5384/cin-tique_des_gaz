@@ -21,9 +21,15 @@ function copy(molecule::Molecule)
     )
 end
 
-#simulation computations---------------------------------------------------------------------------------------
+#variables (here for retrofitting...)--------------------------
 #g = -9.81e13
 g = 0.0
+
+edge_temp = true
+(t_plus, t_minus) = (700, 300)
+
+#simulation computations---------------------------------------------------------------------------------------
+
 
 function computeNextPosition(molecule::Molecule; acceleration::NTuple{3,Float64} = (0.0,0.0,g), delta_t::Float64)
     molecule.speed = molecule.speed .+ acceleration .* delta_t
@@ -83,6 +89,28 @@ function specularReflection(molecule::Molecule, domain::Domain)
     molecule.position = position
 end
 
+function temperatureReflection(molecule::Molecule, (t_plus, t_minus)::Tuple{Int,Int})
+    c_boltzmann = 1.380649e-23
+
+    position = molecule.position
+    speed = molecule.speed
+    
+    if position[3] > domain.z/2
+        sigma = sqrt(c_boltzmann * t_plus / molecule.masse)
+        speed = (randn() * sigma, randn() * sigma, - sigma * sqrt(-2*log(rand())))
+        position = (position[1],position[2],reflect1D(position[3],domain.z))    
+    end
+    if position[3] < - domain.z/2
+        sigma = sqrt(c_boltzmann * t_minus / molecule.masse)
+        speed = (randn() * sigma, randn() * sigma, + sigma * sqrt(-2*log(rand())))
+        position = (position[1],position[2],reflect1D(position[3],domain.z))    
+    end
+
+    molecule.speed = speed
+    molecule.position = position
+    return
+end    
+
 #step function, does all that is needed to be done in a step--------------------------------------------------------------------
 
 function step(molecules::Vector{Molecule};delta_t::Float64, domain::Domain)
@@ -93,7 +121,10 @@ function step(molecules::Vector{Molecule};delta_t::Float64, domain::Domain)
     end
     for molecule in molecules
         computeNextPosition(molecule, delta_t = delta_t)
-        specularReflection(molecule,domain)
+        if edge_temp
+            temperatureReflection(molecule, (t_plus, t_minus))
+        end  
+        specularReflection(molecule,domain)  
     end
 end
 
