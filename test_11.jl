@@ -1,6 +1,7 @@
 #import-------------------------
 include("main.jl")
 using GLMakie
+using Statistics
 
 #base variables-----------------------------
 delta_t = 1e-14
@@ -86,17 +87,23 @@ end
 
 function temperature_profile(molecules)
     bins = get_bins(molecules)
-
     temperatures = zeros(Float64, n_bins)
-
     for i in 1:n_bins
         if !isempty(bins[i])
             temperatures[i] = temperature(bins[i])
         end
     end
-
     return temperatures
 end
+
+#precompute all temperature profiles and running means------------------
+println("precomputing temperature profiles...")
+all_temp_profiles = [temperature_profile(s) for s in states_history]
+running_mean_profiles = [
+    [mean(all_temp_profiles[j][i] for j in 1:frame) for i in 1:n_bins]
+    for frame in 1:length(states_history)
+]
+println("done!")
 
 #fig layout--------------------------------------
 fig = Figure(size = (1800, 1800))
@@ -119,24 +126,45 @@ ax_entropy = Axis(fig[1, 3],
 
 ax_temp = Axis(fig[2, 3],
     title = "Z-temperature distribution",
-    xlabel = "temperature",
+    xlabel = "Temperature (K)",
     ylabel = "z (m)",
     limits = (0, 1000, -domain.z/2, domain.z/2)
 )
 
 #observables-----------------------------------------
-obs_positions = Observable([Point3f(m.position[1], m.position[2], m.position[3]) for m in molecules])
-obs_entropy = Observable(entropy_history)
-obs_temp = Observable(temperature_profile(molecules))
+obs_positions  = Observable([Point3f(m.position[1], m.position[2], m.position[3]) for m in molecules])
+obs_entropy    = Observable(entropy_history)
+obs_temp       = Observable(all_temp_profiles[1])
+obs_mean_temp  = Observable(running_mean_profiles[1])
 
 #plots-----------------
 scatter!(ax3d, obs_positions, markersize = 8, color = colors)
 lines!(ax_entropy, obs_entropy)
+
+# running mean 
+barplot!(ax_temp,
+    z_bin_centers,
+    obs_mean_temp,
+    direction = :x,
+    width     = z_bin_width,
+    color     = "orange",
+)
+
+# current profile
 barplot!(ax_temp,
     z_bin_centers,
     obs_temp,
     direction = :x,
-    width     = z_bin_width,
+    width     = z_bin_width * 0.8,
+    color     = RGBAf(0.2, 0.6, 1.0, 0.55),
+)
+
+# legend
+Legend(fig[3, 3],
+    [PolyElement(color = "orange"),
+     PolyElement(color = RGBAf(0.2, 0.6, 1.0, 0.55))],
+    ["Running mean", "Current"],
+    orientation = :horizontal
 )
 
 #animation loop ----------------------------------------------------------------------------
@@ -151,9 +179,10 @@ screen = display(fig)
 while running[]
     for (frame, state) in enumerate(states_history)
         running[] || break
-        obs_positions[] = [Point3f(m.position[1], m.position[2], m.position[3]) for m in state]
-        obs_entropy[] = entropy_history[1:frame]
-        obs_temp[] = temperature_profile(state)
+        obs_positions[]  = [Point3f(m.position[1], m.position[2], m.position[3]) for m in state]
+        obs_entropy[]    = entropy_history[1:frame]
+        obs_temp[]       = all_temp_profiles[frame]
+        obs_mean_temp[]  = running_mean_profiles[frame]
         sleep(1/60)
     end
 end
